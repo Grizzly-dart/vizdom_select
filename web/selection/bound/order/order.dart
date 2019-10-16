@@ -10,25 +10,34 @@ void main() {
       .selectAll('div')
       .bindMap<int>(LinkedHashMap<String, int>.fromIterable([50, 80, 20],
           key: (i) => i.toString()))
-      .enter('div')
-      .styles({
-    'margin': '2px',
-    'box-sizing': 'border-box',
-    'display': 'inline-block',
-    'padding': '5px',
-    'background-color': '#E6E6E6',
-  }).textBound((BoundElement<int> b) => b.data);
+      .enter('div', (element) {
+    final DivElement div = element.node;
+    div.style
+      ..margin = '2px'
+      ..boxSizing = 'border-box'
+      ..display = 'inline-block'
+      ..padding = '5px'
+      ..backgroundColor = '#E6E6E6';
+    div.text = element.data.toString();
+  });
 
+  /*
   select('#root').selectAll('div').bindMap<int>(
       LinkedHashMap<String, int>.fromIterable([10, 20, 40, 50, 70, 80, 100],
           key: (i) => i.toString()))
-    ..exit().remove()
-    ..enter('div').styles({
-      'margin': '2px',
-      'box-sizing': 'border-box',
-      'display': 'inline-block',
-      'padding': '5px',
-      'background-color': '#E6E6E6',
+    ..exit((e) => e.node.remove())
+    ..enter('div', (element) {
+      final DivElement div = element.node;
+      div.style
+        ..margin = '2px'
+        ..boxSizing = 'border-box'
+        ..display = 'inline-block'
+        ..padding = '5px'
+        ..backgroundColor = '#E6E6E6';
     })
-    ..merge().textBound((BoundElement<int> b) => b.data).order();
+    ..merge((element) {
+      final div = element.node as DivElement;
+      div.text = element.data.toString();
+    }) /* TODO .order() */;
+   */
 }

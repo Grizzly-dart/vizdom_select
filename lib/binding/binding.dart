@@ -6,9 +6,7 @@ import 'package:vizdom_select/selection/selection.dart';
 import 'package:vizdom_select/uitls/collection.dart';
 import 'package:vizdom_select/uitls/html.dart';
 
-import 'enter_node.dart';
-
-export 'enter_node.dart';
+part 'enter_node.dart';
 
 /// Encapsulates binding on a [Selection]
 class Binding<VT> {
@@ -18,7 +16,7 @@ class Binding<VT> {
   /// Parents of each group in selection
   final UnmodifiableListView<Element> parents;
 
-  final List<List<EnterNode>> _enter;
+  final List<List<_EnterNode>> _enter;
 
   List<List<Element>> _entered;
 
@@ -39,7 +37,7 @@ class Binding<VT> {
       UnmodifiableListView<UnmodifiableListView<Element>> groups,
       UnmodifiableListView<Element> parents,
       List<VT> data) {
-    final enters = List<List<EnterNode>>.filled(groups.length, null);
+    final enters = List<List<_EnterNode>>.filled(groups.length, null);
     final exits = List<List<Element>>.filled(groups.length, null);
     final updates = List<List<Element>>.filled(groups.length, null);
 
@@ -47,7 +45,7 @@ class Binding<VT> {
       final List<Element> group = groups[j];
       final Element parent = parents[j];
 
-      final enter = List<EnterNode>.filled(data.length, null);
+      final enter = List<_EnterNode>.filled(data.length, null);
       final exit = List<Element>.filled(group.length, null);
       final update = List<Element>.filled(data.length, null);
 
@@ -64,7 +62,7 @@ class Binding<VT> {
           el.dataset['vizzie-label'] = i.toString();
           update[i] = el;
         } else {
-          enter[i] = EnterNode(parent, data[i], i.toString(), i, null);
+          enter[i] = _EnterNode(parent, data[i], i.toString(), i, null);
         }
       }
 
@@ -83,7 +81,7 @@ class Binding<VT> {
         Element next;
 
         for (int i0 = 0; i0 < data.length; i0++) {
-          final EnterNode previous = enter[i0];
+          final _EnterNode previous = enter[i0];
           if (previous != null) {
             if (i0 >= i1) {
               if (i0 == (data.length - 1)) break;
@@ -98,8 +96,7 @@ class Binding<VT> {
       */
     }
 
-    final labels =
-    List<String>.generate(data.length, (int i) => i.toString());
+    final labels = List<String>.generate(data.length, (int i) => i.toString());
 
     return Binding<VT>._(groups, parents, makeImmutableLevel1<VT>(data),
         makeImmutableLevel1<String>(labels), enters, exits, updates);
@@ -110,7 +107,7 @@ class Binding<VT> {
       UnmodifiableListView<Element> parents,
       List<VT> data,
       LinkedHashSet<String> keys) {
-    final enters = List<List<EnterNode>>.filled(groups.length, null);
+    final enters = List<List<_EnterNode>>.filled(groups.length, null);
     final exits = List<List<Element>>.filled(groups.length, null);
     final updates = List<List<Element>>.filled(groups.length, null);
 
@@ -120,7 +117,7 @@ class Binding<VT> {
       final List<Element> group = groups[j];
       final Element parent = parents[j];
 
-      final enter = List<EnterNode>.filled(data.length, null);
+      final enter = List<_EnterNode>.filled(data.length, null);
       final exit = List<Element>.filled(group.length, null);
       final update = List<Element>.filled(data.length, null);
 
@@ -150,7 +147,7 @@ class Binding<VT> {
           update[i] = nodeKeyMap[key];
           nodeKeyMap.remove(key);
         } else {
-          enter[i] = EnterNode(parent, data[i], key, i, null);
+          enter[i] = _EnterNode(parent, data[i], key, i, null);
         }
         keyIter.moveNext();
       }
@@ -160,57 +157,61 @@ class Binding<VT> {
         makeImmutableLevel1<String>(keys.toList()), enters, exits, updates);
   }
 
-  /// Returns [BoundSelection] to work on new data items
-  BoundSelection<VT> enter(String tag) {
+  /// Updates new elements based on their data.
+  ///
+  /// Executes [forEach] function on each element that has been newly added.
+  void enter(String tag, ForEachBound<VT> forEach) {
     if (_entered != null) throw Exception('Already entered!');
     _entered = List<List<Element>>.filled(_enter.length, null);
     for (int i = 0; i < _enter.length; i++) {
-      final List<EnterNode> group = _enter[i];
+      final List<_EnterNode> group = _enter[i];
       _entered[i] = List<Element>.filled(group.length, null);
       for (int j = 0; j < group.length; j++) {
-        final EnterNode el = group[j];
+        final _EnterNode el = group[j];
         if (el == null) continue;
 
         final Element newEl = createElement(tag);
         newEl.dataset['vizzie-label'] = labels[j];
         el.append(newEl);
         _entered[i][j] = newEl;
+        forEach(BoundElementRef<VT>(newEl, data[j], j, labels[j]));
       }
     }
-    return BoundSelection<VT>.fromImmutable(
-        makeImmutableLevel2<Element>(_entered),
-        this.parents,
-        data,
-        labels,
-        this);
   }
 
-  /// Returns [Selection] to work on old unneeded elements
-  Selection exit() => Selection(_exit, parents);
+  /// Executes [forEach] function on each old element whose bound data has been
+  /// removed.
+  void exit(ForEach forEach) {
+    for (final group in _exit) {
+      for (final element in group) {
+        forEach(ElementRef(element));
+      }
+    }
+  }
 
-  /// Returns [Selection] to work on old but needed elements
-  BoundSelection<VT> update() => BoundSelection<VT>.fromImmutable(
-      _update, this.parents, data, labels, this);
+  /// Updates old elements based on changes to their data.
+  ///
+  /// Executes [forEach] function on each element that needs update.
+  void update(ForEachBound<VT> forEach) {
+    for (final group in _update) {
+      for (int j = 0; j < group.length; j++) {
+        forEach(BoundElementRef<VT>(group[j], data[j], j, labels[j]));
+      }
+    }
+  }
 
   /// Merges enter and update selections and returns the merged selection
   ///
   /// Binding must be entered before merging
-  BoundSelection<VT> merge() {
+  void merge(ForEachBound<VT> forEach) {
     if (_entered == null) throw Exception('Must be entered before merge!');
-    final newGroup = List<List<Element>>.filled(groups.length, null);
     for (int i = 0; i < groups.length; i++) {
       final List<Element> entered = _entered[i];
       final List<Element> updated = _update[i];
-      newGroup[i] = List<Element>.filled(data.length, null);
       for (int j = 0; j < data.length; j++) {
-        newGroup[i][j] = entered[j] ?? updated[j];
+        final element = entered[j] ?? updated[j];
+        forEach(BoundElementRef<VT>(element, data[j], j, labels[j]));
       }
     }
-    return BoundSelection<VT>.fromImmutable(
-        makeImmutableLevel2<Element>(newGroup),
-        this.parents,
-        data,
-        labels,
-        this);
   }
 }

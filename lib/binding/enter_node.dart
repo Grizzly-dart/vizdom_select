@@ -1,7 +1,7 @@
-import 'dart:html';
+part of 'binding.dart';
 
 /// Encapsulates the items that needs to be entered in [Binding]
-class EnterNode<VT> {
+class _EnterNode<VT> {
   /// Parent of the entered item
   final Element parent;
 
@@ -19,10 +19,10 @@ class EnterNode<VT> {
   /// [next] can be null
   final Node next;
 
-  EnterNode(this.parent, this.data, this.label, this.index, this.next);
+  _EnterNode(this.parent, this.data, this.label, this.index, this.next);
 
-  EnterNode cloneWithNext(Element next) =>
-      EnterNode(parent, data, label, index, next);
+  _EnterNode cloneWithNext(Element next) =>
+      _EnterNode(parent, data, label, index, next);
 
   void append(Element child) => parent.insertBefore(child, next);
 }

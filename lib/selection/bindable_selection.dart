@@ -13,7 +13,7 @@ abstract class Bindable {
   Binding<UT> bindMap<UT>(Map<String, UT> maps);
 }
 
-abstract class BindableSelected implements Selected, Bindable {}
+abstract class BindableSelected implements Bindable {}
 
 class BindableSelection extends Selection implements BindableSelected {
   BindableSelection(List<List<Element>> groups, List<Element> parents)
