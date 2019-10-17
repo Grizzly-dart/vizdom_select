@@ -1,6 +1,7 @@
 import 'dart:html' hide Selection;
 import 'dart:collection';
 
+import 'package:vizdom_select/component/component.dart';
 import 'package:vizdom_select/selection/bound.dart';
 import 'package:vizdom_select/selection/selection.dart';
 import 'package:vizdom_select/uitls/collection.dart';
@@ -213,5 +214,12 @@ class Binding<VT> {
         forEach(BoundElementRef<VT>(element, data[j], j, labels[j]));
       }
     }
+  }
+
+  void operate(BindOperator<VT>  operator) {
+    exit(operator.onExit);
+    enter(operator.enterElementTag, operator.onEnter);
+    merge(operator.onMerge);
+    update(operator.onUpdate);
   }
 }

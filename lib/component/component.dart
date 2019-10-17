@@ -11,13 +11,13 @@ abstract class BoundComponent {
 }
 
 abstract class BindOperator<VT> {
-  Iterable<VT> get data;
+  String get enterElementTag;
 
-  void onEnter(BoundElementRef<VT> elementRef);
+  void onEnter(BoundElementRef<VT> elementRef) {}
 
-  void onExit(ElementRef elementRef);
+  void onExit(ElementRef elementRef) {}
 
-  void onMerge(BoundElementRef<VT> elementRef);
+  void onMerge(BoundElementRef<VT> elementRef) {}
 
-  void onUpdate(BoundElementRef<VT> elementRef);
+  void onUpdate(BoundElementRef<VT> elementRef) {}
 }

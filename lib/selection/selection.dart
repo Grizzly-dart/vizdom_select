@@ -1,5 +1,6 @@
 import 'dart:html';
 import 'dart:collection';
+import 'dart:html' as prefix0;
 
 import 'package:vizdom_select/binding/binding.dart';
 import 'package:vizdom_select/selection/bindable_selection.dart';
@@ -40,7 +41,7 @@ class Selection implements Selectable {
             <Element>[],
             (List<Element> list, List<Element> g) => list..addAll(g)));
 
-  Selection select(String select) {
+  Selection select(String select, {void doo(Selection sel)}) {
     final newGroup = List<List<Element>>.filled(groups.length, null);
 
     for (int i = 0; i < groups.length; i++) {
@@ -53,7 +54,9 @@ class Selection implements Selectable {
       }
     }
 
-    return Selection._groups(newGroup, this.parents);
+    final ret = Selection._groups(newGroup, this.parents);
+    if (doo != null) doo(ret);
+    return ret;
   }
 
   BindableSelected selectAll(String select) {
