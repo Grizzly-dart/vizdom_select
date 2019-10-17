@@ -1,8 +1,8 @@
 import 'dart:html' hide Selection;
 import 'dart:collection';
+import 'dart:html' as prefix0;
 
 import 'package:vizdom_select/component/component.dart';
-import 'package:vizdom_select/selection/bound.dart';
 import 'package:vizdom_select/selection/selection.dart';
 import 'package:vizdom_select/uitls/collection.dart';
 import 'package:vizdom_select/uitls/html.dart';
@@ -11,19 +11,16 @@ part 'enter_node.dart';
 
 /// Encapsulates binding on a [Selection]
 class Binding<VT> {
-  /// Groups in selection
-  final UnmodifiableListView<UnmodifiableListView<Element>> groups;
-
   /// Parents of each group in selection
-  final UnmodifiableListView<Element> parents;
+  final Element parent;
 
-  final List<List<_EnterNode>> _enter;
+  final List<_EnterNode> _enter;
 
-  List<List<Element>> _entered;
+  List<Element> _entered;
 
-  final List<List<Element>> _exit;
+  final List<Element> _exit;
 
-  final List<List<Element>> _update;
+  final List<Element> _update;
 
   /// Labels of data bound to the selection
   final UnmodifiableListView<String> labels;
@@ -31,8 +28,99 @@ class Binding<VT> {
   /// The data bound to the selection
   final UnmodifiableListView<VT> data;
 
-  Binding._(this.groups, this.parents, this.data, this.labels, this._enter,
-      this._exit, this._update);
+  Binding._(this.parent, this.data, this.labels, this._enter, this._exit,
+      this._update);
+
+  factory Binding.keyed(
+      String selector, Element parent, List<VT> data, List<String> keys) {
+    final elements = parent.querySelectorAll(selector);
+    // Find keys for existing nodes
+    final nodeKeyMap = <String, Element>{};
+    for (final element in elements) {
+      final key = element.dataset['vizdom-key'];
+      if (key == null) continue;
+      nodeKeyMap[key] = element;
+    }
+
+    final enters = <_EnterNode>[];
+    final updates = <Element>[]..length = data.length;
+
+    for (int i = 0; i < data.length; i++) {
+      final key = keys[i];
+      final element = nodeKeyMap.remove(key);
+      if (element == null) {
+        enters.add(_EnterNode(parent, data[i], key, i, null));
+        continue;
+      }
+      updates[i] = element;
+    }
+
+    final exits = nodeKeyMap.values.toList();
+
+    return Binding<VT>._(parent, makeImmutableLevel1<VT>(data),
+        makeImmutableLevel1<String>(keys), enters, exits, updates);
+  }
+
+  /// Updates new elements based on their data.
+  ///
+  /// Executes [forEach] function on each element that has been newly added.
+  void enter(String tag, ForEachBound<VT> forEach) {
+    if (_entered != null) throw Exception('Already entered!');
+    _entered = []..length = data.length;
+    for (int i = 0; i < _enter.length; i++) {
+      final _EnterNode enter = _enter[i];
+      final newEl = createElement(tag);
+      newEl.dataset['vizdom-key'] = labels[enter.index];
+      _entered[enter.index] = newEl;
+      parent.children.add(newEl);
+      forEach(BoundElementRef<VT>(
+          newEl, data[enter.index], enter.index, labels[enter.index]));
+    }
+  }
+
+  /// Executes [forEach] function on each old element whose bound data has been
+  /// removed.
+  void exit(ForEach forEach) {
+    for (final element in _exit) {
+      forEach(ElementRef(element));
+    }
+  }
+
+  /// Updates old elements based on changes to their data.
+  ///
+  /// Executes [forEach] function on each element that needs update.
+  void update(ForEachBound<VT> forEach) {
+    for (int i = 0; i < _update.length; i++) {
+      final el = _update[i];
+      if (el != null) forEach(BoundElementRef<VT>(el, data[i], i, labels[i]));
+    }
+  }
+
+  /// Merges enter and update selections and returns the merged selection
+  ///
+  /// Binding must be entered before merging
+  void merge(ForEachBound<VT> forEach) {
+    if (_entered == null) throw Exception('Must be entered before merge!');
+    for (int i = 0; i < data.length; i++) {
+      final Element entered = _entered[i];
+      final Element updated = _update[i];
+      final element = entered ?? updated;
+      if (element != null) {
+        forEach(BoundElementRef<VT>(element, data[i], i, labels[i]));
+      }
+    }
+  }
+
+  void operate(BindOperator<VT> operator) {
+    exit(operator.onExit);
+    enter(operator.enterElementTag, operator.onEnter);
+    merge(operator.onMerge);
+    update(operator.onUpdate);
+  }
+}
+
+/*
+
 
   factory Binding.indexed(
       UnmodifiableListView<UnmodifiableListView<Element>> groups,
@@ -102,124 +190,4 @@ class Binding<VT> {
     return Binding<VT>._(groups, parents, makeImmutableLevel1<VT>(data),
         makeImmutableLevel1<String>(labels), enters, exits, updates);
   }
-
-  factory Binding.keyed(
-      UnmodifiableListView<UnmodifiableListView<Element>> groups,
-      UnmodifiableListView<Element> parents,
-      List<VT> data,
-      LinkedHashSet<String> keys) {
-    final enters = List<List<_EnterNode>>.filled(groups.length, null);
-    final exits = List<List<Element>>.filled(groups.length, null);
-    final updates = List<List<Element>>.filled(groups.length, null);
-
-    for (int j = 0; j < groups.length; j++) {
-      final nodeKeyMap = <String, Element>{};
-
-      final List<Element> group = groups[j];
-      final Element parent = parents[j];
-
-      final enter = List<_EnterNode>.filled(data.length, null);
-      final exit = List<Element>.filled(group.length, null);
-      final update = List<Element>.filled(data.length, null);
-
-      enters[j] = enter;
-      exits[j] = exit;
-      updates[j] = update;
-
-      // Find keys for existing nodes
-      for (int i = 0; i < group.length; i++) {
-        final Element el = group[i];
-        if (el == null) continue;
-        final String key = el.dataset['vizzie-label'];
-        if (nodeKeyMap.containsKey(key)) {
-          exit[i] = el;
-        } else if (!keys.contains(key)) {
-          exit[i] = el;
-        } else {
-          nodeKeyMap[key] = el;
-        }
-      }
-
-      final Iterator<String> keyIter = keys.iterator;
-      keyIter.moveNext();
-      for (int i = 0; i < data.length; i++) {
-        final String key = keyIter.current;
-        if (nodeKeyMap.containsKey(key)) {
-          update[i] = nodeKeyMap[key];
-          nodeKeyMap.remove(key);
-        } else {
-          enter[i] = _EnterNode(parent, data[i], key, i, null);
-        }
-        keyIter.moveNext();
-      }
-    }
-
-    return Binding<VT>._(groups, parents, makeImmutableLevel1<VT>(data),
-        makeImmutableLevel1<String>(keys.toList()), enters, exits, updates);
-  }
-
-  /// Updates new elements based on their data.
-  ///
-  /// Executes [forEach] function on each element that has been newly added.
-  void enter(String tag, ForEachBound<VT> forEach) {
-    if (_entered != null) throw Exception('Already entered!');
-    _entered = List<List<Element>>.filled(_enter.length, null);
-    for (int i = 0; i < _enter.length; i++) {
-      final List<_EnterNode> group = _enter[i];
-      _entered[i] = List<Element>.filled(group.length, null);
-      for (int j = 0; j < group.length; j++) {
-        final _EnterNode el = group[j];
-        if (el == null) continue;
-
-        final Element newEl = createElement(tag);
-        newEl.dataset['vizzie-label'] = labels[j];
-        el.append(newEl);
-        _entered[i][j] = newEl;
-        forEach(BoundElementRef<VT>(newEl, data[j], j, labels[j]));
-      }
-    }
-  }
-
-  /// Executes [forEach] function on each old element whose bound data has been
-  /// removed.
-  void exit(ForEach forEach) {
-    for (final group in _exit) {
-      for (final element in group) {
-        forEach(ElementRef(element));
-      }
-    }
-  }
-
-  /// Updates old elements based on changes to their data.
-  ///
-  /// Executes [forEach] function on each element that needs update.
-  void update(ForEachBound<VT> forEach) {
-    for (final group in _update) {
-      for (int j = 0; j < group.length; j++) {
-        forEach(BoundElementRef<VT>(group[j], data[j], j, labels[j]));
-      }
-    }
-  }
-
-  /// Merges enter and update selections and returns the merged selection
-  ///
-  /// Binding must be entered before merging
-  void merge(ForEachBound<VT> forEach) {
-    if (_entered == null) throw Exception('Must be entered before merge!');
-    for (int i = 0; i < groups.length; i++) {
-      final List<Element> entered = _entered[i];
-      final List<Element> updated = _update[i];
-      for (int j = 0; j < data.length; j++) {
-        final element = entered[j] ?? updated[j];
-        forEach(BoundElementRef<VT>(element, data[j], j, labels[j]));
-      }
-    }
-  }
-
-  void operate(BindOperator<VT>  operator) {
-    exit(operator.onExit);
-    enter(operator.enterElementTag, operator.onEnter);
-    merge(operator.onMerge);
-    update(operator.onUpdate);
-  }
-}
+ */

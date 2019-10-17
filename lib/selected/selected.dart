@@ -1,8 +1,4 @@
 import 'dart:html';
-import 'dart:collection';
-
-import 'package:vizdom_select/namespace/namespace.dart';
-import 'package:vizdom_select/selection/bindable_selection.dart';
 
 class ElementRef {
   final Node node;

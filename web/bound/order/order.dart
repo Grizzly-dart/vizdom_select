@@ -3,22 +3,34 @@
 
 import 'dart:collection';
 import 'dart:html' hide Selection;
+import 'dart:math';
 import 'package:vizdom_select/vizdom_select.dart';
 
 void main() {
-  select('#root')
-      .selectAll('div')
-      .bindMap<int>(LinkedHashMap<String, int>.fromIterable([50, 80, 20],
-          key: (i) => i.toString()))
-      .enter('div', (element) {
-    final DivElement div = element.node;
-    div.style
-      ..margin = '2px'
-      ..boxSizing = 'border-box'
-      ..display = 'inline-block'
-      ..padding = '5px'
-      ..backgroundColor = '#E6E6E6';
-    div.text = element.data.toString();
+  void render({List<int> data}) {
+    data ??= List<int>.generate(5, (_) => Random.secure().nextInt(100));
+    select('#root').bind<int>('.item', data)
+      ..enter('div', (ref) {})
+      ..exit((el) {
+        el.node.remove();
+      })
+      ..merge((ref) {
+        final DivElement element = ref.node;
+        element.classes.add('item');
+        element.style
+          ..margin = '2px'
+          ..boxSizing = 'border-box'
+          ..display = 'inline-block'
+          ..padding = '5px'
+          ..backgroundColor = '#E6E6E6';
+        element.text = ref.data.toString();
+      });
+  }
+
+  render();
+
+  querySelector('#randomize-button').onClick.listen((_) {
+    render();
   });
 
   /*

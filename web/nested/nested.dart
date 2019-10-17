@@ -8,22 +8,19 @@ import 'package:vizdom_select/vizdom_select.dart';
 void main() {
   select('#root')
     ..select('.header', doo: (header) {
-      header.select('.title').forEach((e) {
-        final node = e.node as DivElement;
-        node.text = "Vizdom";
-      });
-      header.select('.sub-title').forEach((e) {
-        final node = e.node as DivElement;
-        node.text = "how-to";
-      });
-    })..select('.content', doo: (content) {
-      content.select('.description').forEach((e) {
-        final node = e.node as DivElement;
-        node.text = "Use select to select elements.";
-      });
-      content.select('.more-description').forEach((e) {
-        final node = e.node as DivElement;
-        node.text = "Use bind to bind data to elements.";
-      });
-  });
+      final title = header.select('.title');
+      DivElement node = title.element;
+      node.text = "Vizdom";
+      final subTitle = header.select('.sub-title');
+      node = subTitle.element;
+      node.text = "how-to";
+    })
+    ..select('.content', doo: (content) {
+      final description = content.select('.description');
+      DivElement node = description.element;
+      node.text = "Use select to select elements.";
+      final moreDescription = content.select('.more-description');
+      node = moreDescription.element;
+      node.text = "Use bind to bind data to elements.";
+    });
 }
