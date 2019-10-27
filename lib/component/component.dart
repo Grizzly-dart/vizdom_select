@@ -1,21 +1,13 @@
 // TODO add dependency injection
 
+import 'dart:html';
+
 import 'package:vizdom_select/selected/selected.dart';
 
-abstract class Component {
-
-}
-
-abstract class BoundComponent {
-
-}
-
 abstract class BindOperator<VT> {
-  String get enterElementTag;
+  Element onEnter(Data<VT> data) {}
 
-  void onEnter(BoundElementRef<VT> elementRef) {}
-
-  void onExit(ElementRef elementRef) {}
+  void onExit(Element elementRef) {}
 
   void onMerge(BoundElementRef<VT> elementRef) {}
 

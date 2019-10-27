@@ -10,9 +10,9 @@ void main() {
   void render({List<int> data}) {
     data ??= List<int>.generate(5, (_) => Random.secure().nextInt(100));
     select('#root').bind<int>('.item', data)
-      ..enter('div', (ref) {})
+      ..enter((ref) => DivElement())
       ..exit((el) {
-        el.node.remove();
+        el.remove();
       })
       ..merge((ref) {
         final DivElement element = ref.node;

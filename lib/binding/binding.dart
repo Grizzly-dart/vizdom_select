@@ -1,6 +1,5 @@
 import 'dart:html' hide Selection;
 import 'dart:collection';
-import 'dart:html' as prefix0;
 
 import 'package:vizdom_select/component/component.dart';
 import 'package:vizdom_select/selection/selection.dart';
@@ -64,17 +63,17 @@ class Binding<VT> {
   /// Updates new elements based on their data.
   ///
   /// Executes [forEach] function on each element that has been newly added.
-  void enter(String tag, ForEachBound<VT> forEach) {
+  void enter(EnterFunc<VT> forEach) {
     if (_entered != null) throw Exception('Already entered!');
     _entered = []..length = data.length;
     for (int i = 0; i < _enter.length; i++) {
       final _EnterNode enter = _enter[i];
-      final newEl = createElement(tag);
+      final newEl = forEach(
+          Data<VT>(data[enter.index], enter.index, labels[enter.index]));
       newEl.dataset['vizdom-key'] = labels[enter.index];
       _entered[enter.index] = newEl;
       parent.children.add(newEl);
-      forEach(BoundElementRef<VT>(
-          newEl, data[enter.index], enter.index, labels[enter.index]));
+      if (forEach != null) {}
     }
   }
 
@@ -82,7 +81,7 @@ class Binding<VT> {
   /// removed.
   void exit(ForEach forEach) {
     for (final element in _exit) {
-      forEach(ElementRef(element));
+      forEach(element);
     }
   }
 
@@ -92,7 +91,8 @@ class Binding<VT> {
   void update(ForEachBound<VT> forEach) {
     for (int i = 0; i < _update.length; i++) {
       final el = _update[i];
-      if (el != null) forEach(BoundElementRef<VT>(el, data[i], i, labels[i]));
+      if (el != null)
+        forEach(BoundElementRef<VT>(el, data[i], i, labels[i], data));
     }
   }
 
@@ -100,28 +100,38 @@ class Binding<VT> {
   ///
   /// Binding must be entered before merging
   void merge(ForEachBound<VT> forEach) {
-    if (_entered == null) throw Exception('Must be entered before merge!');
+    if (_enter.isNotEmpty && _entered == null)
+      throw Exception('Must be entered before merge!');
     for (int i = 0; i < data.length; i++) {
       final Element entered = _entered[i];
       final Element updated = _update[i];
       final element = entered ?? updated;
       if (element != null) {
-        forEach(BoundElementRef<VT>(element, data[i], i, labels[i]));
+        forEach(BoundElementRef<VT>(element, data[i], i, labels[i], data));
       }
     }
   }
 
   void operate(BindOperator<VT> operator) {
     exit(operator.onExit);
-    enter(operator.enterElementTag, operator.onEnter);
+    enter(operator.onEnter);
     merge(operator.onMerge);
     update(operator.onUpdate);
+  }
+
+  List<Selection> selectAll() {
+    if (_enter.isNotEmpty && _entered == null)
+      throw Exception('Must be entered before selection!');
+    final ret = <Selection>[]..length = data.length;
+    for (int i = 0; i < data.length; i++) {
+      ret[i] =
+          Selection(_entered[i] ?? _update[i], parent: parent, data: data[i]);
+    }
+    return ret;
   }
 }
 
 /*
-
-
   factory Binding.indexed(
       UnmodifiableListView<UnmodifiableListView<Element>> groups,
       UnmodifiableListView<Element> parents,
