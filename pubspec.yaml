@@ -1,6 +1,6 @@
 name: vizdom_select
 description: Incremental DOM library to build beautiful graphs and plots.
-version: 2.0.1
+version: 2.0.2
 homepage: https://github.com/Grizzly-dart/vizdom_select
 author: Ravi Teja Gudapati <tejainece@gmail.com>
 
