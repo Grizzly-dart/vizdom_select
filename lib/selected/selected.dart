@@ -1,6 +1,10 @@
 import 'dart:html';
 
-typedef ForEach = void Function(Element element);
+import 'package:vizdom_select/vizdom_select.dart';
+import 'package:vizdom_select/binding/binding.dart';
+
+/// Function that is called for each element in a selection.
+typedef ForEachElement = void Function(Element element);
 
 class BoundElementRef<DT> implements Data<DT> {
   final int dataIndex;
@@ -13,9 +17,20 @@ class BoundElementRef<DT> implements Data<DT> {
 
   final Iterable<DT> allData;
 
-  BoundElementRef(this.node, this.data, this.dataIndex, this.label, this.allData);
+  BoundElementRef(
+      this.node, this.data, this.dataIndex, this.label, this.allData);
+
+  Element get element => node;
+
+  Binding<T> bind<T>(String selector, List<T> data, {List<String> keys}) {
+    keys ??= List<String>.generate(data.length, (i) => i.toString());
+    return Binding<T>.keyed(selector, node, data, keys);
+  }
+
+  Selection get asSelection => Selection(node, data: data);
 }
 
+/// Called for each data in a [Binding] to update or merge data to the element.
 typedef ForEachBound<VT> = void Function(BoundElementRef<VT> element);
 
 class Data<DT> {
@@ -28,6 +43,8 @@ class Data<DT> {
   Data(this.data, this.dataIndex, this.label);
 }
 
+/// Called for each data in a [Binding] that does not have a corresponding element.
+/// Must return an element that should be bound to data..
 typedef EnterFunc<DT> = Element Function(Data<DT> data);
 
 /*

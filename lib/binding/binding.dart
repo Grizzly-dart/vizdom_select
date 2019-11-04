@@ -3,8 +3,6 @@ import 'dart:collection';
 
 import 'package:vizdom_select/component/component.dart';
 import 'package:vizdom_select/selection/selection.dart';
-import 'package:vizdom_select/uitls/collection.dart';
-import 'package:vizdom_select/uitls/html.dart';
 
 part 'enter_node.dart';
 
@@ -56,8 +54,8 @@ class Binding<VT> {
 
     final exits = nodeKeyMap.values.toList();
 
-    return Binding<VT>._(parent, makeImmutableLevel1<VT>(data),
-        makeImmutableLevel1<String>(keys), enters, exits, updates);
+    return Binding<VT>._(parent, UnmodifiableListView<VT>(data),
+        UnmodifiableListView<String>(keys), enters, exits, updates);
   }
 
   /// Updates new elements based on their data.
@@ -79,7 +77,7 @@ class Binding<VT> {
 
   /// Executes [forEach] function on each old element whose bound data has been
   /// removed.
-  void exit(ForEach forEach) {
+  void exit(ForEachElement forEach) {
     for (final element in _exit) {
       forEach(element);
     }
@@ -91,8 +89,9 @@ class Binding<VT> {
   void update(ForEachBound<VT> forEach) {
     for (int i = 0; i < _update.length; i++) {
       final el = _update[i];
-      if (el != null)
+      if (el != null) {
         forEach(BoundElementRef<VT>(el, data[i], i, labels[i], data));
+      }
     }
   }
 
@@ -100,8 +99,9 @@ class Binding<VT> {
   ///
   /// Binding must be entered before merging
   void merge(ForEachBound<VT> forEach) {
-    if (_enter.isNotEmpty && _entered == null)
+    if (_enter.isNotEmpty && _entered == null) {
       throw Exception('Must be entered before merge!');
+    }
     for (int i = 0; i < data.length; i++) {
       final Element entered = _entered[i];
       final Element updated = _update[i];
@@ -120,8 +120,9 @@ class Binding<VT> {
   }
 
   List<Selection> selectAll() {
-    if (_enter.isNotEmpty && _entered == null)
+    if (_enter.isNotEmpty && _entered == null) {
       throw Exception('Must be entered before selection!');
+    }
     final ret = <Selection>[]..length = data.length;
     for (int i = 0; i < data.length; i++) {
       ret[i] =

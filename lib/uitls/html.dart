@@ -1,6 +1,6 @@
 import 'dart:html';
 
-import 'package:vizdom_select/namespace/namespace.dart';
+import 'package:vizdom_select/uitls/namespace.dart';
 
 Element createElement(String tag) {
   final name = Namespaced.parse(tag);
