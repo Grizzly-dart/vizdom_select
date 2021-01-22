@@ -7,10 +7,13 @@ import 'package:vizdom_select/binding/binding.dart';
 typedef ForEachElement = void Function(Element element);
 
 class BoundElementRef<DT> implements Data<DT> {
+  @override
   final int dataIndex;
 
+  @override
   final String label;
 
+  @override
   final DT data;
 
   final Node node;

@@ -6,7 +6,11 @@ import 'package:vizdom_select/vizdom_select.dart';
 
 void main() {
   final selection = select('svg')
-    ..select('text', init: SvgElement.tag('text')..innerHtml = 'Hello'..setAttribute('x', '50')..setAttribute('y', '10'))
+    ..select('text',
+        init: SvgElement.tag('text')
+          ..innerHtml = 'Hello'
+          ..setAttribute('x', '50')
+          ..setAttribute('y', '10'))
     ..select('rect',
         init: SvgElement.tag('rect')
           ..setAttribute('width', '100')

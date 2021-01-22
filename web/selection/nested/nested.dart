@@ -9,17 +9,17 @@ void main() {
     ..select('.header', doo: (header) {
       final title = header.select('.title');
       DivElement node = title.element;
-      node.text = "Vizdom";
+      node.text = 'Vizdom';
       final subTitle = header.select('.sub-title');
       node = subTitle.element;
-      node.text = "how-to";
+      node.text = 'how-to';
     })
     ..select('.content', doo: (content) {
       final description = content.select('.description');
       DivElement node = description.element;
-      node.text = "Use select to select elements.";
+      node.text = 'Use select to select elements.';
       final moreDescription = content.select('.more-description');
       node = moreDescription.element;
-      node.text = "Use bind to bind data to elements.";
+      node.text = 'Use bind to bind data to elements.';
     });
 }
